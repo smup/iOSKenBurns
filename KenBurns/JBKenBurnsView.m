@@ -26,7 +26,7 @@
 #include <stdlib.h>
 
 #define enlargeRatio 1.2
-#define imageBufer 3
+#define imageBufer 4
 
 // Private interface
 @interface KenBurnsView ()
@@ -86,16 +86,7 @@
     self.isLoop           = shouldLoop;
     self.isLandscape      = inLandscape;
     self.animationInCurse = NO;
-    
-    int bufferSize = (imageBufer < urls.count) ? imageBufer : urls.count;
-    
-    // Fill the buffer.
-    for (uint i=0; i<bufferSize; i++) {
-        NSString *url = [[NSString alloc] initWithString:[urls objectAtIndex:i]];
-        [self.imagesArray addObject:[self _downloadImageFrom:url]];
-        [url release];
-    }
-    
+        
     self.layer.masksToBounds = YES;
     
     [NSThread detachNewThreadSelector:@selector(_startInternetAnimations:) toTarget:self withObject:urls];
@@ -104,57 +95,55 @@
 
 - (void) _startAnimations:(NSArray *)images
 {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    @autoreleasepool {
     
-    for (uint i = 0; i < [images count]; i++) {
-        
-        [self performSelectorOnMainThread:@selector(_animate:)
-                               withObject:[NSNumber numberWithInt:i]
-                            waitUntilDone:YES];
-        
-        sleep(self.timeTransition);
-        i = (i == [images count]-1) && isLoop ? -1 : i; 
+        for (uint i = 0; i < [images count]; i++) {
+            
+            [self performSelectorOnMainThread:@selector(_animate:)
+                                   withObject:[NSNumber numberWithInt:i]
+                                waitUntilDone:YES];
+            
+            sleep(self.timeTransition);
+            i = (i == [images count]-1) && isLoop ? -1 : i; 
+        }
     }
-
-    [pool release];
 }
 
 - (UIImage *) _downloadImageFrom:(NSString *) url
 {
-    UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:url]]];
-    [url release];
+    UIImage * image =  [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:url]]];
     return image;
 }
 
 - (void) _startInternetAnimations:(NSArray *)urls
 {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    BOOL wrapping = NO;
-    int bufferIndex = 0;
-    
-    for (int urlIndex=self.imagesArray.count; urlIndex < [urls count]; urlIndex++) {
-                
-        [self performSelectorOnMainThread:@selector(_animate:)
-                               withObject:[NSNumber numberWithInt:0]
-                            waitUntilDone:YES];            
+    @autoreleasepool {
+        BOOL wrapping = NO;
+        int bufferIndex = 0;
         
-        [self.imagesArray removeObjectAtIndex:0];
-        [self.imagesArray addObject:[self _downloadImageFrom:[urls objectAtIndex: urlIndex]]];
-        
-        if ( bufferIndex == self.imagesArray.count -1)
-        {
-            NSLog(@"Wrapping!!");
-            wrapping = YES;
-            bufferIndex = -1;
+        for (int urlIndex=0; urlIndex < [urls count]; urlIndex++) {
+                    
+            [self.imagesArray addObject:[self _downloadImageFrom:[urls objectAtIndex: urlIndex]]];
+            [self performSelectorOnMainThread:@selector(_animate:)
+                                   withObject:[NSNumber numberWithInt:0]
+                                waitUntilDone:YES];            
+            
+            [self.imagesArray removeObjectAtIndex:0];
+            
+            if ( bufferIndex == self.imagesArray.count -1)
+            {
+                NSLog(@"Wrapping!!");
+                wrapping = YES;
+                bufferIndex = -1;
+            }
+            
+            bufferIndex++;
+            urlIndex = (urlIndex == [urls count]-1) && isLoop ? -1 : urlIndex; 
+            
+            sleep(self.timeTransition);
         }
         
-        bufferIndex++;
-        urlIndex = (urlIndex == [urls count]-1) && isLoop ? -1 : urlIndex; 
-        
-        sleep(self.timeTransition);
     }
-    
-    [pool release];
 }
 
 - (void) _animate:(NSNumber*)num
@@ -173,6 +162,10 @@
     float moveY         = -1;
     float frameWidth    = isLandscape? self.frame.size.width : self.frame.size.height;
     float frameHeight   = isLandscape? self.frame.size.height : self.frame.size.width;
+    
+//    frameWidth *= [[UIScreen mainScreen] scale];
+//    frameHeight *= [[UIScreen mainScreen] scale];
+    
     
     // Widder than screen 
     if (image.size.width > frameWidth)
@@ -316,7 +309,6 @@
     imageView.transform = transform;
     [UIView commitAnimations];
     
-    [imageView release];
     
 }
 
