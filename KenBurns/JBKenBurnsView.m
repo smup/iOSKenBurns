@@ -118,29 +118,39 @@
 - (void) _startInternetAnimations:(NSArray *)urls
 {
     @autoreleasepool {
-        BOOL wrapping = NO;
-        int bufferIndex = 0;
-        
-        for (int urlIndex=0; urlIndex < [urls count]; urlIndex++) {
-                    
-            [self.imagesArray addObject:[self _downloadImageFrom:[urls objectAtIndex: urlIndex]]];
-            [self performSelectorOnMainThread:@selector(_animate:)
-                                   withObject:[NSNumber numberWithInt:0]
-                                waitUntilDone:YES];            
-            
-            [self.imagesArray removeObjectAtIndex:0];
-            
-            if ( bufferIndex == self.imagesArray.count -1)
-            {
-                NSLog(@"Wrapping!!");
-                wrapping = YES;
-                bufferIndex = -1;
+//        BOOL wrapping = NO;
+//        int bufferIndex = 0;
+        NSUInteger urlIndex = 0;
+        NSUInteger error_count = 0;
+        while ((urlIndex < [urls count]) && (error_count < [urls count])){
+            NSUInteger error_count = 0;
+            UIImage * image = [self _downloadImageFrom:[urls objectAtIndex: urlIndex]];
+            BOOL doSleep = NO;
+            if (image != nil) {
+                [self.imagesArray addObject:image];
+                [self performSelectorOnMainThread:@selector(_animate:)
+                                       withObject:[NSNumber numberWithInt:0]
+                                    waitUntilDone:YES];            
+                
+                [self.imagesArray removeObjectAtIndex:0];
+                doSleep = YES;
+            }
+            else {
+                error_count++;
             }
             
-            bufferIndex++;
-            urlIndex = (urlIndex == [urls count]-1) && isLoop ? -1 : urlIndex; 
+//            if ( bufferIndex == self.imagesArray.count -1)
+//            {
+//                NSLog(@"Wrapping!!");
+//                wrapping = YES;
+//                bufferIndex = -1;
+//            }
             
-            sleep(self.timeTransition);
+//            bufferIndex++;
+            urlIndex = ((urlIndex == [urls count]-1) && isLoop) ? 0 : urlIndex++;
+            
+            if (doSleep)
+                sleep(self.timeTransition);
         }
         
     }
