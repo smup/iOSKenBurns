@@ -75,6 +75,7 @@
     
     self.layer.masksToBounds = YES;
     
+    self.stopRequested = NO;
     [NSThread detachNewThreadSelector:@selector(_startAnimations:) toTarget:self withObject:images];
 
 }
@@ -88,23 +89,32 @@
     self.animationInCurse = NO;
         
     self.layer.masksToBounds = YES;
-    
+    self.stopRequested = NO;
     [NSThread detachNewThreadSelector:@selector(_startInternetAnimations:) toTarget:self withObject:urls];
     
+}
+
+- (void) stopAnimating
+{
+    self.stopRequested = YES;
 }
 
 - (void) _startAnimations:(NSArray *)images
 {
     @autoreleasepool {
     
-        for (uint i = 0; i < [images count]; i++) {
+        uint i = 0;
+        while ((i < [images count]) && !_stopRequested) {
             
             [self performSelectorOnMainThread:@selector(_animate:)
                                    withObject:[NSNumber numberWithInt:i]
                                 waitUntilDone:YES];
             
             sleep(self.timeTransition);
-            i = (i == [images count]-1) && isLoop ? -1 : i; 
+            i++;
+            if (i == [images count] && isLoop) {
+                i = 0;
+            }
         }
     }
 }
@@ -122,7 +132,7 @@
 //        int bufferIndex = 0;
         NSUInteger urlIndex = 0;
         NSUInteger error_count = 0;
-        while ((urlIndex < [urls count]) && (error_count < [urls count])){
+        while (!_stopRequested && (urlIndex < [urls count]) && (error_count < [urls count])){
             NSUInteger error_count = 0;
             UIImage * image = [self _downloadImageFrom:[urls objectAtIndex: urlIndex]];
             BOOL doSleep = NO;
@@ -147,7 +157,11 @@
 //            }
             
 //            bufferIndex++;
-            urlIndex = ((urlIndex == [urls count]-1) && isLoop) ? 0 : urlIndex++;
+            urlIndex++;
+            if ((urlIndex == [urls count]) && isLoop)
+            {
+                urlIndex = 0;
+            }
             
             if (doSleep)
                 sleep(self.timeTransition);

@@ -26,19 +26,17 @@
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
 
-@interface KenBurnsView : UIView {
-    NSMutableArray *imagesArray;
-    float timeTransition;
-    BOOL isLoop;
-    BOOL isLandscape;
-}
+@interface KenBurnsView : UIView
 
 @property (nonatomic, assign) float timeTransition;
 @property (nonatomic, retain) NSMutableArray *imagesArray;
-@property (nonatomic) BOOL isLoop;
-@property (nonatomic) BOOL isLandscape;
+@property (nonatomic, assign) BOOL isLoop;
+@property (nonatomic, assign) BOOL isLandscape;
+@property (nonatomic, assign) BOOL stopRequested;
 
 - (void) animateWithImages:(NSArray *)images transitionDuration:(float)time loop:(BOOL)isLoop isLandscape:(BOOL)isLandscape;
 - (void) animateWithURLs:(NSArray *)urls transitionDuration:(float)duration loop:(BOOL)shouldLoop isLandscape:(BOOL)inLandscape;
+
+- (void) stopAnimating;
 
 @end
